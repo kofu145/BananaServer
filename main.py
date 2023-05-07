@@ -86,6 +86,9 @@ def login():
 @app.route("/signup", methods=["POST"])
 def signup():
 	print(request.form)
+	if request.form["username"] == "":
+		raise InvalidUsage("Username cannot be empty!", status_code=400)
+
 	if request.form["username"] not in users:
 		users.append(request.form["username"])
 		with open("users.json", "w") as f:
