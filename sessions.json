@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "username": "kofu",
+    "auth": "143439e3-0ea2-4912-b8a2-a30523b5b529"
+  },
+  {
+    "username": "test",
+    "auth": "6db3cdc9-8e0a-4531-a574-52b04bc725b2"
+  }
+]

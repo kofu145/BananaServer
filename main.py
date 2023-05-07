@@ -1,8 +1,16 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 import json
 import uuid
+import cv2
+import numpy as np
+import os
+from imageprocessor import ImageProcessor
+from invalidusage import InvalidUsage
+import shutil
 
 app = Flask('app')
+
+trashAnalyzer = ImageProcessor()
 
 with open("posts.json", "r") as f:
 	posts = json.load(f)
@@ -13,21 +21,7 @@ with open("users.json", "r") as f:
 with open("sessions.json", "r") as f:
 	sessions = json.load(f)
 
-class InvalidUsage(Exception):
-	status_code = 400
 
-	def __init__(self, message, status_code=None, payload=None):
-		Exception.__init__(self)
-		self.message = message
-		if status_code is not None:
-			self.status_code = status_code
-
-		self.payload = payload
-
-	def to_dict(self):
-		rv = dict(self.payload or ())
-		rv['message'] = self.message
-		return rv
 
 def authenticate(auth_token):
 	authenticated=False
@@ -47,8 +41,22 @@ def handle_invalid_usage(error):
 def hello_world():
 	return jsonify({"message": "hello world!"})
 
+@app.route("/image", methods=["POST"])
+def process_image():
+	# byte file
+	print(request.files)
+	print(request.form)
+	file = request.files['image'].read()
+	npimg = np.fromstring(file, np.uint8)
+	img = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
+	if os.path.exists("./results"):
+		shutil.rmtree("./results")
+	trashAnalyzer.process_image(img)
+	return send_file("./results/image0.jpg", mimetype="image/jpg")
+
 @app.route("/login", methods=["POST"])
 def login():
+	print(request.form)
 	for session in sessions:
 		if session["username"] == request.form["username"]:
 			response = {
@@ -77,6 +85,7 @@ def login():
 
 @app.route("/signup", methods=["POST"])
 def signup():
+	print(request.form)
 	if request.form["username"] not in users:
 		users.append(request.form["username"])
 		with open("users.json", "w") as f:
@@ -114,4 +123,4 @@ def modify_posts():
 
 	raise InvalidUsage("Invalid method!", status_code=400)
 
-app.run(host='0.0.0.0', port=8080)
+app.run(host='0.0.0.0', port=8080) #ssl_context="adhoc")
